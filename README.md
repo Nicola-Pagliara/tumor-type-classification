@@ -1,5 +1,10 @@
 # DL-based tumor type classification
+[a.a. 22/23] Gaetano Antonucci & Nicola Pagliara
 
+Project developed as part of course "**Strumenti formali per la bioinformatica**" of the Computer Science
+Department (**Università degli Studi di Salerno**)
+
+The aim of this work is to replicate and improve the work cited in the **Reference** section below. 
 
 # Setup
 To create the environment used to perform the tests we used Anaconda (python 3.9) with the following packages:
