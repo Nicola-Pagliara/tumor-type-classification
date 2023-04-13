@@ -1,0 +1,164 @@
+\section{Introduzione}
+\label{sec:intro}
+Grazie al miglioramento delle tecniche di sequenziamento con l'avvento dei Next Generation Sequencing methods, 
+si è avuto un progressivo miglioramento in accuratezza ed efficienza anche per quanto riguarda l'analisi del genoma
+umano. Un problema sempre presente anche ai giorni nostri è quello di comprendere in maniera completa e approfondita
+le cause dei vari tumori. A tal fine, The Cancer Genome Atlas, si è occupato del sequenziamento e della gestione di
+un grande volume di tessuti tumorali e, inoltre, ha analizzato oltre 11.000 tumori appartenenti alle 33 forme più diffuse
+di cancro. A partire da tali analisi è stata incentivata la creazione del Pan-Cancer Atlas, il quale, come riportato
+nella loro home page "fornisce una comprensione unica, completa, approfondita e interconnessa di come, dove e 
+perché nascono i tumori nell'uomo". Il Pan-Cancer Atlas è di fatto una risorsa essenziale per lo sviluppo di nuovi
+trattamenti nella ricerca della medicina personalizzata, in quanto, per ogni sample tumorale, è possibile accedere ai
+suoi \textit{RNA-Seq expression data}. Tali dati sono un vantaggio quando si cerca di identificare i potenziali
+biomarker per ogni tipo di tumore.
+
+Finora, per tentare di scoprire i potenziali biomarker, molte analisi cercavano di trovare i geni che si sono espressi 
+differentemente. Tali analisi, però, non tengono conto dell'espressione dei geni in altri tipi di tumore e solo legate
+al tipo di tumore e/o ai dati specifici che si stanno analizzando correntemente. Di fatti, molti modelli vanno a 
+simulare l'espressione dei geni ma falliscono miseramente quando si usa il modello su altri dati o su altri
+tipi di tumore. Da tali fallimenti è dunque nata l'esigenza di progettare un metodo che possa includere nelle analisi
+la conoscenza proveniente da più classi tumorali.
+
+Da un altro punto di vista, la classificazione dei tumori usando i dati genomici può contribuire ad una diagnosi più
+veloce e più accurata ma, di fatti, raramente viene usata in quanto è difficile lavorare con dataset genomici ad alta
+dimensionalità. 
+Per rendere più chiaro questo punto, basti pensare che nel Pan-Cancer Atlas gli \textit{mRNA-Seq gene expression} 
+data contengono informazioni a partire da oltre 20 mila geni, molti dei quali non sono coinvolti nello sviluppo dei
+tumori. 
+Tali geni sono dunque weak feature quando si lavora con tecniche di Machine Learning. Usare metodi classici di ML 
+come KNN non è fattibile in quanto essi fallirebbero a causa della cosiddetta "curse of dimension". 
+È da notare che, se anche la classificazione dei tumori è ancora agli inizi, la classificazione e il riconoscimento di
+immagini è invece molto sviluppata e in tale ambito è usato ampiamente il deep learning. Molte architetture come ResNet
+\cite{he2016deep} e Inception \cite{szegedy2015going} hanno mostrato performance eccellenti nella classificazione 
+multi-classe di immagini.
+Inoltre, per comprendere come lavorano le deep neural network, nel campo della computer vision sono stati sviluppati
+metodi come la deep Taylor Decomposition, la layer-wise decomposition e Grad-CAM \cite{selvaraju2017grad}. 
+Tali metodi generano heatmap delle immagini in input al fine di indicare quanto ogni pixel ha contribuito alla
+classificazione.
+Dal momento che i \textit{gene expression data} contengono oltre 10 mila geni è promettente utilizzare le deep neural
+network per ottenere una buona accuracy. Allo stesso tempo, se si suppone che l'importanza di un gene sia paragonabile 
+a quanto si è espresso (e dunque a quanto ha contribuito alla classificazione), si possono prendere in prestito i 
+metodi di interpretazione delle deep neural network per scoprire i top gene di ogni tumore. 
+A tale scopo, ad ogni gene sarà associato un confidence score, e i geni con uno score alto saranno considerati come top
+gene e dunque potenziali biomarker dal momento che la loro esistenza ha influito in maniera considerevole nella 
+classificazione.
+
+A partire dal lavoro svolto da Lyu e Haque \cite{lyu2018deep}, dapprima abbiamo provveduto a creare il dataset 
+su cui lavorare a partire dai \textit{raw data}. Poi, abbiamo replicato il loro lavoro andando a filtrare i geni 
+nei sample che presentavano una varianza piccola. 
+Successivamente, abbiamo incorporato gli expression data ad alta intensità (10381x1) in immagini 2D (102x102) 
+per adattarli ai layer convoluzionali. In seguito, abbiamo utilizzato la rete convoluzionale di Lyu e Haque 
+unitamente alla 10-fold cross validation per testare le performance. Con la rete addestrata, abbiamo seguito 
+al pari degli autori, l'idea della Gradient-weighted Class Activation Mapping (Guided Grad-CAM \cite{selvaraju2017grad})
+e sono state generate le heat-map per tutte le classi mostrando i pixel più significativi (geni). 
+Tramite Pathway Enrichment Analysis, abbiamo poi validato, come in \cite{lyu2018deep}, che la scelta dei top gene
+effettuata è biologicamente significativa per i tumori corrispondenti e ciò dimostra che il lavoro di partenza è valido.
+Per agevolarci nel compito abbiamo dapprima effettuato dei test su un numero ristretto di classi tumorali.
+Dapprima abbiamo lavorato su un caso binario (classi DLBC e UCS), poi su un caso ternario (BLCA, CESC e LGG) e 
+infine sul caso generale (tutte e 33 le classi tumorali).
+
+\subsubsection{Pan-Cancer Atlas}~\newline
+The Cancer Genome Atlas (TCGA), un programma di riferimento per la genomica del cancro, ha caratterizzato 
+molecolarmente oltre 20.000 campioni primari di cancro e campioni normali appaiati che coprono 33 tipi di cancro. 
+Questo sforzo congiunto tra il National Cancer Institute (NCI) e il National Human Genome Research Institute è 
+iniziato nel 2006 riunendo ricercatori di diverse discipline e molteplici istituzioni. 
+The Cancer Genome Atlas (TCGA) ha contribuito a stabilire l'importanza della genomica del cancro\footnote{Il cancro è 
+un gruppo di malattie causate da cambiamenti nel DNA che alterano il comportamento delle cellule, provocando una
+crescita incontrollabile a livello molecolare e causando gravi danni al sistema cellulare. Queste anomalie
+possono assumere diverse forme, tra cui mutazioni del DNA, riarrangiamenti, soppressioni, amplificazioni e aggiunta 
+o rimozione di marcature chimiche.
+Questi cambiamenti possono indurre le cellule a produrre quantità anomale di particolari proteine o a produrre proteine
+malformate che non funzionano come dovrebbero. Spesso, una combinazione di diverse alterazioni genomiche portano alla
+formazione di un cancro. Per risolvere  e capire al meglio questi cambiamenti genomici si utilizzano dati clinici che
+descrivono la risposta dei pazienti al trattamento del cancro, esperimenti di laboratorio che utilizzano linee cellulari
+e organismi modello e tecniche di analisi dei big data.}, ha trasformato la nostra comprensione del cancro e ha persino
+iniziato a cambiare il modo in cui la malattia viene trattata clinicamente. L'impatto va ancora oltre poi, raggiungendo
+le tecnologie sanitarie e scientifiche, la biologia computazionale e altri campi di ricerca. Dopo 12 anni, con i
+contributi di oltre 11.000 pazienti e l'incredibile impegno di migliaia di ricercatori, il TCGA ha prodotto una serie 
+di dati di incommensurabile valore. Questi dati\footnote{2.5 petabytes} rimangono a disposizione del pubblico 
+come riferimento affidabile che potrà essere sfruttato per molti anni. 
+Da questi sforzi nasce il Pan-Cancer Atlas, una raccolta di analisi trasversali sul cancro che ne approfondiscono 
+temi generali, tra cui: i modelli di origine cellulare, i processi oncogenici e le signaling pathway.
+Grazie all'analisi di oltre 11.000 tumori provenienti da 33 delle forme tumorali più diffuse, il Pan-Cancer Atlas
+fornisce una comprensione unica, completa, approfondita e interconnessa di come, dove e perché nascono i tumori
+nell'uomo. Come punto di riferimento unico e unificato, il Pan-Cancer Atlas è una risorsa essenziale per lo sviluppo 
+di nuovi trattamenti nella ricerca della medicina di precisione, il progetto è stato reso pubblico con
+tutti i dati dopo il suo completamento nel 2018.
+
+\subsection{Next Generation Sequencing e RNA-Seq}
+Come affermato in \cite{illumina2021rna} con le tecniche Next Generation Sequencing e quelle NGS-based RNA sequencing 
+(RNA-Seq) si è avuto un progresso tecnologico che ha consentito agli scienziati 
+di andare oltre quelli che erano i limiti dei metodi tradizionali. 
+Inizialmente i ricercatori guardavano il 90\% del genoma umano unicamente come 
+"junk DNA" mentre ora esso è apprezzato per il suo ruolo di controllo sui geni 
+espressi includendo anche informazioni quali: le regioni in cui si sono espressi,
+in quale momento e in che entità.
+Grazie ai GWAS (Genome-Wide Associations Studies) è stato rilevato che la 
+maggior parte delle varianti identificate sono presenti nelle regioni 
+non-codificanti del DNA e ciò sottolinea quanto sia importante la \textit{gene expression e regulation} 
+nel meccanismo di una malattia.
+RNA-Seq rivela il trascrittoma completo (full transcriptome), non solo pochi 
+trascritti selezionati. L’RNA-Seq fornisce visibilità all’interno di cambiamenti
+nella gene expression che prima non erano rilevabili e consente la 
+caratterizzazione di forme multiple di RNA non codificante.
+Grazie all'autentico potere di scoperta del rilevamento imparziale dell'RNA, 
+l'RNA-Seq è rapidamente emerso come l'approccio più importante per la 
+profilazione del trascrittoma ad alto throughput e attualmente è uno 
+dei tool più potenti e significativi.
+
+L'analisi dell'espressione genica con RNA-Seq è considerata uno strumento 
+fondamentale per scoprire i meccanismi del cancro e aiutare la ricerca sulle 
+malattie genetiche. L'RNA-Seq fornisce anche una visione dei trascritti non 
+codificanti e ne illumina il ruolo nelle malattie complesse.
+Gli avanzamenti nell'RNA-Seq hanno permesso ai ricercatori di esaminare i 
+dettagli dello sviluppo del cancro e delle malattie infettive a livello di 
+singola cellula con un contesto a livello di tessuto.
+
+\subsection{RNA-Seq vs Microarray DNA}
+L’RNA-Seq è un potente metodo basato sul sequenziamento che cattura uno spettro
+completo e informativo dei dati di espressione genica. A differenza dei microarray,
+RNA-Seq non richiede l'uso di sonde (probe) predefinite e dunque i set di dati
+sono imparziali e consentono una progettazione sperimentale priva di ipotesi.
+Tale strumento si rivela fondamentale negli studi di \textit{transcript discovery} e di
+varianti che non sarebbero possibili con l'utilizzo di metodi tradizionali che
+prevedono che l'esperimento abbia un target noto. 
+
+L'RNA-Seq offre una copertura più fine del trascrittoma e una minore 
+variabilità tecnica rispetto ai microarray, con la capacità di rilevare una 
+percentuale più elevata di geni espressi in modo differenziato, in particolare 
+sui geni a bassa abbondanza.
+
+\subsection{Funzionamento di RNA-Seq}
+L'RNA-Seq conta le singole \textit{sequence read} allineate ad una \textit{reference sequence} per
+generare conteggi discreti di read. I ricercatori, aumentando o diminuendo
+il numero di sequence read (\textit{coverage depth}), possono regolare con precisione
+la sensibilità di un esperimento al fine di soddisfare i diversi obiettivi di studio.
+La natura quantitativa di questo processo e la capacità di controllare i 
+livelli di copertura supportano un intervallo dinamico estremamente ampio, 
+con valori di espressione assoluti piuttosto che relativi.
+
+\subsection{RNA-Seq per la ricerca sul cancro}
+L'RNA-Seq si è rivelato uno strumento essenziale per misurare in maniera diretta
+le conseguenze funzionali delle mutazioni dei geni. Dalle 46 mutazioni circa contenute
+nel cancro medio, ne servono solo da 5 a 8 per dare inizio al tumore.
+Il solo profilo genomico è insufficiente per differenziare queste "driver mutation"
+dalle "passenger mutation", ovvero quelle mutazioni che non influenzano l'inizio
+o la progressione del cancro. Combinando le misurazioni dei modelli di espressione
+genica e le conseguenze delle mutazioni tramite RNA-Seq è possibile differenziare,
+su larga scala e in maniera imparziale, i fattori cruciali per la progressione
+del cancro e ciò consente una modellazione più approfondita e accurata dello stesso.
+Il rilevamento delle fusioni geniche è particolarmente significativo per la 
+ricerca sul cancro, poiché il 20\% di tutti i tumori umani presenta 
+traslocazioni e fusioni geniche. La maggior parte delle fusioni geniche ha un 
+impatto significativo sulla tumorgenesi e una forte associazione con il 
+fenotipo morfologico, rendendole utili come potenziali marker diagnostici e 
+prognostici.
+
+\vspace{5mm}
+La parte restante di questa relazione è organizzata come segue: nella sezione 2 vengono passati 
+a rassegna i lavori correlati alla classificazione dei tumori e alla visualizzazione delle deep neural network. 
+Nella sezione 3 vengono descritti i dati utilizzati, le metodologie applicate per la classificazione dei 
+tumori e la procedura per generare le heatmap. 
+Nella sezione 4 vengono discussi i risultati ottenuti e la validazione tramite 
+Pathway Enrichment Analysis dei top gene estrapolati dalle heatmap. Infine, nella sezione 5 presentiamo
+quella che è stata la nostra modifica al lavoro di Lyu e Haque \cite{lyu2018deep}.

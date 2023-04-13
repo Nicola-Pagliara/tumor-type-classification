@@ -1,0 +1,21 @@
+\section{Conclusioni e Sviluppi Futuri}
+\label{sec:conclusion}
+In questo lavoro ci eravamo posti come obiettivo quello di replicare nella sua interezza il lavoro svolto
+in \cite{lyu2018deep} e di provare a migliorarlo andando ad agire sulle varie parti che lo compongono.
+Dapprima ci siamo occupati di scrivere le parti di codice mancanti (tutte le modifiche sono documentate 
+nell'Appendice \ref{appendix}), poi abbiamo eseguito dei test sia su casi ridotti sia sul caso completo 
+e infine abbiamo provato a migliorare le performance utilizzando un altra rete neurale come 
+descritto nella sezione \ref{sec:varnet}.
+È stato un lavoro lungo e difficile in quanto è stato necessario scrivere ex novo alcune parti di codice 
+ed è stato necessario aggiornare il codice per meglio sfruttare i recenti miglioramenti nelle librerie
+utilizzate.
+In conclusione, seppur utilizzando la stessa rete del riferimento all'inizio, abbiamo ottenuto sia delle
+performance generali migliori sia performance migliori per alcune coorti tumorali specifiche. 
+Inoltre, questo lavoro è stato fonte di ispirazione per lo studio ed è stato fondamentale per comprendere
+quanto il lavoro dei bioinformatici possa essere d'aiuto alla ricerca medica senza mai ovviamente 
+poterla sostituire.
+Sviluppi futuri di questo lavoro sicuramente potranno migliorare le performance magari 
+utilizzando un modello di deep learning diverso (ad esempio utilizzando modelli pretrained come VGG, 
+AlexNet o Inception) oppure utilizzando reinforcement learning o i transformers.  
+Un'altra strada percorribile è quella di fare un tuning ancora più preciso di quelli che sono stati i parametri
+di addestramento utilizzati al fine di trovare una configurazione migliore di quella attuale.

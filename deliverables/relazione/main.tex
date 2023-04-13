@@ -1,0 +1,153 @@
+\newcommand{\compacttitlespacing}{0} %disable when we need room for authors
+\documentclass[manuscript, language=italian, language=english, authorversion=false, authordraft=false, screen=true,
+noacm=true]{acmart}
+\setcopyright{none}
+\settopmatter{printacmref=false}
+% defining the \BibTeX command - from Oren Patashnik's original BibTeX documentation.
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08emT\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\usepackage{longtable}
+\usepackage{colortbl}
+\usepackage{float}
+\usepackage{svg}    
+\usepackage{nicefrac}
+\usepackage{siunitx}
+\usepackage{array,framed}
+\usepackage{booktabs}
+\usepackage{
+  color,
+  float,
+  epsfig,
+  wrapfig,
+  graphics,
+  graphicx,
+}
+\usepackage{textcomp,amssymb}
+\usepackage{setspace}
+\usepackage{latexsym,fancyhdr,url}
+\usepackage{enumerate}
+\usepackage{algorithm2e}
+\usepackage{algpseudocode}
+\usepackage{graphics}
+\usepackage[caption=true,font={tt,bf,sc},listofformat=subsimple, labelformat=empty]{subfig}
+\usepackage{xparse} % argument parsing -- \edist
+\usepackage{xspace}
+\usepackage{multirow}
+\usepackage{csvsimple}
+\usepackage{balance}
+% \usepackage{flushend}
+% \usepackage{mathptmx,avant}
+\usepackage{afterpage}
+\afterpage{\clearpage}
+
+%%%% Tikz variables, pgfplot
+\usepackage{
+  tikz,
+  pgfplots,
+  pgfplotstable
+}
+\usepackage{hyperref}
+
+\usetikzlibrary{
+  shapes.geometric,
+  arrows,
+  external,
+  pgfplots.groupplots,
+  matrix
+}
+
+\pgfplotsset{compat=1.9}
+% \tikzexternalize[prefix=images/]
+% \tikzexternalenable
+
+%\pagenumbering{arabic}
+% \pagestyle{plain}
+
+\usepackage{mathtools,}
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}
+
+% \setmathfont{Latin Modern Math}[version=lm]
+\DeclareMathAlphabet{\mathcal}{OMS}{cmsy}{m}{n}
+% \DeclareSymbolFont{operators}{T1}{cmr}{m}{n}
+% \DeclareSymbolFont{letters}{OML}{cmm}{m}{it}
+% \DeclareSymbolFont{symbols}{OMS}{cmsy}{m}{n}
+% \DeclareSymbolFont{largesymbols}{OMX}{cmex}{m}{n}
+
+% \usepackage{times}
+
+% \setmathcal{Arial}
+
+% TO deal with the weird flow of boxes
+% \brokenpenalty=1000
+% \clubpenalty=1000
+% \widowpenalty=10
+\DeclareGraphicsExtensions{%
+    .png,.PNG,%
+    .pdf,.PDF,%
+    .jpg,.mps,.jpeg,.jbig2,.jb2,.JPG,.JPEG,.JBIG2,.JB2}
+
+\input{defs}
+%\setlength{\belowcaptionskip}{-10pt} 
+%\setlength{\footskip}{30pt}
+%\setlength{\abovecaptionskip}{5pt plus 3pt minus 2pt} 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\definecolor{MyGreen}{HTML}{ccff99}
+\definecolor{MyGold}{HTML}{ffe066}
+\definecolor{MyOrange}{HTML}{ffc266}
+\newcommand{\clrmatch}[0]{MyGold}
+\newcommand{\clrpath}[0]{MyOrange}
+\newcommand{\clrnew}[0]{blue}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+%\fontfamily{lmr}\selectfont
+% \def\thetitle{A Practical Way to Generate Strong Keys from Noisy Data}
+\fancyhead{}
+\def\thetitle{Un approccio deep learning per la classificazione delle varie tipologie di forme tumorali tramite uso delle espressioni genetiche, individuando potenziali biomarker}
+\title{\thetitle}
+
+\author{Nicola Pagliara}
+\affiliation{\small{Università degli Studi di Salerno}}
+\email{n.pagliara1@studenti.unisa.it}
+\author{Gaetano Antonucci}
+\affiliation{\small{Università degli Studi di Salerno}}
+\email{g.antonucci2@studenti.unisa.it}
+\date{13 febbraio 2023}
+\acmDOI{}
+\acmPrice{}
+\keywords{Deep Learning, Tumor Type Classification, Pan-Cancer Atlas, Convolutional Neural Network, Gene Expression, Biomarker}
+\input{abstract/abstract} % ALLA FINE
+\maketitle
+% Section I
+\input{sections/intro}      % GAETANO
+\input{sections/background} % GAETANO
+\input{sections/methodology} % NICOLA
+\input{sections/results}     % NICOLA
+\input{sections/our_changes.tex} % NICOLA
+\input{sections/discussion.tex} % GAETANO
+\input{sections/conclusion} % NICOLA
+
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{bib}
+\begin{acks}
+Ci teniamo a ringraziare il Prof. Rocco Zaccagnino per averci dato la possibilità
+di lavorare a questo progetto in quanto eravamo desiderosi di poter lavorare manipolando
+le gene expression e per averci fornito ciò di cui avevamo bisogno per poter
+iniziare e le Prof.sse Clelia De Felice e Rosalba Zizza per averci fornito le nozioni
+teoriche necessarie a comprendere quanto indispensabile per lavorare con i dati genomici.
+\end{acks}
+
+% % --- Appendix ---%
+\appendix
+\input{appendix}
+
+\end{document}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

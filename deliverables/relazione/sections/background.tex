@@ -1,0 +1,51 @@
+\section{Lavori correlati}
+\label{sec:relwork}
+\subsection{Metodi di Machine Learning e Deep Learning per la classificazione}
+Molti paper scientifici di questi ultimi anni si soffermano maggiormente sull'individuazione dei top gene per una singola
+tipologia di tumore mentre altri si limitano ad effettuare una classificazione binaria (identificazione) dei
+tumori usando i \textit{gene expression data}. Il paper \cite{li2017comprehensive}, invece, ha effettuato una ricerca
+sulla classificazione di multipli tipi di tumore usando tecniche classiche di Machine Learning. 
+Gli autori di tale lavoro hanno applicato iterativamente il metodo
+GA/KNN al fine di generare, ad ogni iterazione, un sottoinsieme di geni (le feature) da passare a KNN per testarne
+l'accuracy. Con questo procedimento hanno ottenuto un'accuracy del 90\% su 31 classi tumorali e sono riusciti a generare
+un insieme di top gene valido per tutti i tipi di tumore analizzati. Per quanto questo sia un metodo robusto
+e alla fine riesca ad ottenere un feature set ottimale esso richiede molte iterazioni e la dimensione del feature 
+set è fissata a priori. Inoltre, usando un unico feature set, viene trascurata quella che è
+l'eterogeneità tra i differenti tipi di tumore e non si vanno a considerare quelli che sono i top gene specifici di
+una determinata classe, tenendo conto che i top gene potrebbero variare molto da classe a classe.
+Analizzando, invece, tecniche di Deep Learning, nel paper \cite{danaee2017deep} gli autori hanno usato gli
+stacked auto-encoder per estrarre feature di alto livello dai valori di espressione dei geni. Tali feature
+vengono date in input ad una ANN a singolo layer per decidere se il sample è un tumore oppure no. L'accuracy di
+tale modello ha raggiunto il 94\%. Questo metodo, tuttavia, ha una struttura estremamente complessa dal momento
+che non è un metodo end-to-end. Per identificare i top gene di BRCA, dapprima le matrici dei pesi di ogni layer
+dell'auto-encoder vengono moltiplicate per ottenere i pesi stimati di ogni gene dell'input layer e poi estraggono
+i top gene facendone il fit con la distribuzione normale.
+L'idea di tale lavoro è molto simile a quella seguita successivamente da \cite{lyu2018deep} usando però metodi
+di visualizzazione delle DNN. La differenza sta nel fatto che in \cite{danaee2017deep} hanno fatto corrispondere
+l'importanza dei geni alle feature di alto livello, mentre in \cite{lyu2018deep} hanno fatto corrispondere l'importanza
+dei geni alla loro contribuzione nella classificazione.
+
+\subsection{Metodi di Visualizzazione delle Deep Neural Network}
+Le Deep Neural Network sono spesso descritte come delle "black box" perché non è così ovvio e scontato il perché una rete
+prenda determinate decisioni. Con il crescente utilizzo delle DNN anche in ambito medico, però, è diventato cruciale
+comprendere come una DNN arrivi a prendere una determinata decisione.
+A seguito di tale esigenza sono state sviluppate diverse tecniche, tra cui, la Deep Taylor Decomposition e la layer-wise
+relevance propagation (LRP) \cite{bachdeep, bach2015pixel}. Tali tecniche sono progettate per interpretare la DNN tramite
+backpropagation. Una maniera conservativa di eseguire LRP è quella di redistribuire l'input di ogni neurone all'indietro
+a tutti i suoi predecessori ugualmente layer dopo layer e, quando viene raggiunto il layer di input, la decomposizione
+risulta effettuata. Tale metodo però va ad inserire dei vincoli sulla rete in quanto richiede una proprietà di relevance
+conservation tra i layer. 
+Esiste una tecnica invece che non va a modificare la rete di partenza e può essere applicata a qualsiasi rete neurale.
+Tale tecnica è la Guided Grad-CAM \cite{selvaraju2017grad}, una combinazione di Guided back-propagation e Grad-CAM.
+In questo lavoro, così come fatto da \cite{lyu2018deep}, si userà tale tecnica per tener traccia dei pixel significativi
+(i geni) in input al fine di poter estrarre i top gene. La localization map di Grad-CAM è generata dapprima calcolando
+l'activation map nella forward propagation e poi calcolando la gradient map nella backward propagation. Ciò è così fatto
+dal momento che, più profondo è il layer convoluzionale, più alto è il livello delle feature che esso contiene. Dal 
+momento che, una volta che i dati raggiungono i layer fully-connected, tutti i dati spaziali vengono persi, Grad-CAM
+costruisce la localization map dell'ultimo layer convoluzionale e la ridimensiona alla dimensione dell'input.
+Tuttavia, come affermato in \cite{selvaraju2017grad}, la heatmap mostra l'importanza di ogni classe ma la risoluzione 
+è bassa a causa del processo di ridimensionamento. Per risolvere questo problema, è stato usato Guided backpropagation,
+un metodo di pixel-space gradient visualization, per raffinare la heatmap. L'output di Guided backpropagation è il
+gradiente di ogni pixel nell'immagine di input e può essere ottenuto attraverso backpropagation. 
+Il risultato finale di Guided Grad-CAM può, quindi, essere ottenuto moltiplicando i risultati di Guided backpropagation 
+e di Grad-CAM.

@@ -1,0 +1,158 @@
+\documentclass[a4paper, 10pt, titlepage]{article}
+% PACKAGES
+\pdfpagewidth
+\paperwidth
+\pdfpageheight
+\paperheight
+\usepackage[english,italian]{babel} 
+\usepackage{epsfig}
+\usepackage{fancyhdr} 
+\usepackage{amsmath,amssymb}
+\usepackage{amscd}
+\usepackage{amsthm} % per i teoremi
+\usepackage[T1]{fontenc} 
+\usepackage[utf8]{inputenc} 
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{graphicx}
+\usepackage{hologo}
+\usepackage[document]{ragged2e}
+\frenchspacing 
+\usepackage{geometry}
+\geometry{a4paper,tmargin=2cm,bmargin=2cm, lmargin=2.8cm,rmargin=2.8cm} 
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{colortbl}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{svg}
+\usepackage[caption=true,font={tt,bf,sc},listofformat=subsimple, labelformat=empty]{subfig}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks   = true,    % Colours links instead of ugly boxes
+  urlcolor     = blue,    % Colour for external hyperlinks
+  linkcolor    = black,    % Colour of internal links
+  citecolor    = blue      % Colour of citations
+}
+\usepackage{natbib}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\definecolor{MyGreen}{HTML}{ccff99}
+\definecolor{MyGold}{HTML}{ffe066}
+\definecolor{MyOrange}{HTML}{ffc266}
+\newcommand{\clrmatch}[0]{MyGold}
+\newcommand{\clrpath}[0]{MyOrange}
+\newcommand{\clrnew}[0]{blue}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%INTERLINEA
+\linespread{1.2}
+\newcommand\frontmatter{%
+    %\cleardoublepage
+  %\@mainmatterfalse
+  \pagenumbering{roman}}
+
+\newcommand\mainmatter{%
+    %\cleardoublepage
+ % \@mainmattertrue
+  \pagenumbering{arabic}}
+
+\newcommand\backmatter{%
+  % \if@openright
+  %   \cleardoublepage
+  % \else
+  %   \clearpage
+  % \fi
+ % \@mainmatterfalse
+   }
+% defining the \BibTeX command - from Oren Patashnik's original BibTeX documentation.
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08emT\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\begin{document}
+    \begin{titlepage}
+        \begin{center}
+            \includegraphics [width=.15\columnwidth, angle=0]{unisa}\\ % height
+            \vspace{0.5cm}
+            {\LARGE \scshape Università degli Studi di Salerno}\\
+            \vspace{0.5cm}
+            {\Large Dipartimento di Informatica}\\
+            \vspace{0.1cm}
+            {\large Strumenti Formali per la Bioinformatica}\\
+            \vspace{1.5cm}
+            {\Large \scshape Relazione di Progetto} \\
+            \vspace{4cm}
+            {\huge \bfseries Un approccio deep learning per la classificazione delle varie tipologie di forme tumorali tramite uso delle espressioni genetiche, individuando potenziali biomarker} \\ 
+            \vspace{2cm}
+        \end{center}   
+        \begin{minipage}[t]{6cm}
+        \flushleft
+        \textsc{Docenti:}\\
+        Prof.ssa \textbf{Clelia De Felice} \\
+        Prof.ssa \textbf{Rosalba Zizza} \\
+        Prof. \textbf{Rocco Zaccagnino} \\
+        %{\small Università degli studi di Salerno} \\[0.25cm]
+        \end{minipage}
+        \hfill
+        \begin{minipage}[t]{6cm}
+        \flushright
+        \textsc{Studenti:}\\
+        \textbf{Nicola Pagliara} 0522501413 \\
+        {\small \url{n.pagliara1@studenti.unisa.it}} \\
+        \textbf{Gaetano Antonucci} 0522500941\\
+        {\small \url{g.antonucci2@studenti.unisa.it}} \\
+        \end{minipage}
+        \vspace{3cm}
+        \begin{center}
+            {\small Anno Accademico 2022-2023} 
+        \end{center}   
+    \end{titlepage}
+    % ABSTRACT
+    \pagenumbering{gobble}
+    \frontmatter
+    % TESTO GIUSTIFICATO
+    \justifying
+    % ABSTRACT
+    \renewcommand{\abstractname}{Abstract}
+    \include{abstract/abstract}
+    % INDICE
+    \pagestyle{plain}
+    \tableofcontents
+    \clearpage
+    % ELENCO DELLE FIGURE
+    \addcontentsline{toc}{section}{Elenco delle figure}
+    \listoffigures
+    \clearpage
+    % ELENCO DELLE TABELLE
+    \addcontentsline{toc}{section}{Elenco delle tabelle}
+    \listoftables
+    \clearpage
+    \mainmatter
+    % SEZIONI
+    % 1
+    \include{sections/intro}
+    % 2
+    \include{sections/background}
+    % 3
+    \include{sections/methodology}
+    % 4
+    \include{sections/results}
+    % 5
+    \include{sections/our_changes}
+    % 6
+    \include{sections/discussion}
+    % 7
+    \include{sections/conclusion}
+
+    \backmatter
+    % RINGRAZIAMENTI
+    \section{Ringraziamenti}
+        Ci teniamo a ringraziare il Prof. Rocco Zaccagnino per averci dato la possibilità
+        di lavorare a questo progetto in quanto eravamo desiderosi di poter lavorare manipolando
+        le gene expression e per averci fornito ciò di cui avevamo bisogno per poter
+        iniziare e le Prof.sse Clelia De Felice e Rosalba Zizza per averci fornito le nozioni
+        teoriche necessarie a comprendere quanto indispensabile per lavorare con i dati genomici.
+    % BIBLIOGRAFIA
+    \addcontentsline{toc}{section}{\bibname}
+    \nocite{*}
+    \bibliographystyle{unsrt} %ACM-Reference-Format
+    \bibliography{bib}
+    %APPENDICE
+    \appendix
+    \include{appendix}
+\end{document}

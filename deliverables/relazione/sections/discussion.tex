@@ -1,0 +1,26 @@
+\section{Discussione}
+\label{sec:discussion}
+La scoperta dei biomarker specifici per ogni tumore è essenziale al fine di migliorare i popolari
+test genomici attuali. Con la saliva o con il sangue, questi test posso indicare le possibilità
+stimate dei diversi tumori per ogni individuo. L'essenzialità è dovuta al fatto che non è garantito che
+i biomarker generati dall'analisi differenziale siano specifici per il determinato tipo di tumore e
+dal fatto che alcuni tumori potrebbero condividere gli stessi biomarker.
+Per evitare questa problematica, in \cite{lyu2018deep} hanno progettato un metodo che sfrutta la conoscenza
+di diversi tipi di tumore e che va a cercare i geni che possono essere usati per differenziarli.
+In questo lavoro abbiamo replicato il lavoro di \cite{lyu2018deep} e dunque abbiamo utilizzato due reti
+neurali convoluzionali per effettuare la classificazione dei dati genomici. La prima rete usata è quella
+progettata da \cite{lyu2018deep}, mentre la seconda è una sua variante ispirata a VGG
+\cite{simonyan2014very} il cui scopo era di migliorare le performance generali (purtroppo non riuscendoci) e 
+migliorare l'accuracy per le singole coorti tumorali. Tale miglioramento è stato riscontrato, ad esempio, 
+per OV e STAD.
+
+La ricerca in ambito di computer vision si è sviluppata velocemente e molti dei metodi sono 
+stati progettati per risolvere i problemi usando le deep neural network.
+Uno dei problemi presenti è che i dati genomici di solito hanno un'alta dimensionalità mentre
+molte delle architetture di deep learning sono per immagini 2D.
+In questo lavoro abbiamo mostrato che il metodo sviluppato da \cite{lyu2018deep}, nel quale si
+inglobano in maniera naive i dati genomici (i geni) su ogni pixel di un'immagine 2D in base 
+all'ordinamento cromosomico, è valido e che le performance sono eccellenti tranne che per alcuni
+tipi di tumore. 
+In base a tali risulti è auspicabile che molti altri metodi di deep learning
+possano essere applicati ai dati genomici in futuro.

@@ -1,0 +1,28 @@
+\begin{abstract}
+L'analisi differenziale è la parte più significativa dell'analisi delle RNA-Seq. 
+I metodi convenzionali di solito mettono in corrispondenza i sample tumorali con
+i sample normali provenienti dalla stessa tipologia di tumore. Tali metodi, però,
+potrebbero fallire nel differenziare i diversi tipi di timore siccome non possono
+sfruttare la conoscenza proveniente da altre tipologie di tumore. Il Pan-Cancer
+Atlas fornisce informazioni molto ampie sulle 33 classi prevalenti di tumori che
+possono essere utilizzate come conoscenza base per generare biomarker specifici
+a seconda della classe tumorale. In questo lavoro abbiamo dapprima replicato
+il lavoro svolto nel paper \cite{lyu2018deep} inglobando i dati ad alta dimensionalità
+delle RNA-Seq in immagini 2D al fine di usare una rete neurale convoluzionale
+(CNN) per eseguire la classificazione delle 33 classi tumorali. 
+L'accuracy finale ottenuta è stata del $94.74\%$. 
+Abbiamo poi provato, come variante a quanto svolto in \cite{lyu2018deep}, a
+modificare i parametri di addestramento della CNN al fine di migliorarne le
+performance ma abbiamo ottenuto un'accuracy complessiva del $94.83\%$ che è inferiore
+a quanto ottenuto da \cite{lyu2018deep}. Tuttavia abbiamo ottenuto dei miglioramenti
+per singola coorte tumorale, come ad esempio ESCA, LGG e LUAD.
+In seguito, seguendo quanto fatto, abbiamo sfruttato anche noi l'idea di 
+Guided Grad-CAM \cite{selvaraju2017grad} e abbiamo generato, per ogni classe,
+le heatmap significative per tutti i geni.
+Tramite Pathway Enrichment Analysis, sui geni che hanno mostrato un'alta 
+intesità nelle heatmap, è stato possibile validare che tali geni sono correlati
+a specifiche path tumorali dimostrando che è possibile utilizzare tale lavoro
+per la ricerca di potenziali biomarker.
+\end{abstract}
+
+% abbiamo riportato i risultati dell'accuracy GPU

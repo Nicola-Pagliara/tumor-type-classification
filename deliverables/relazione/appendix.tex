@@ -1,0 +1,414 @@
+\section{Manutenzione ed Evoluzione DL-tumor based approach }
+\label{appendix}
+Nelle sezioni seguenti andremo a mostrare la struttura della repository del progetto e quali sono state le 
+principali modifiche e gli errori riscontrati dapprima per clonare il progetto originale di \cite{lyu2018deep} e poi 
+per mettere in piedi quella che è stata la nostra variante alla rete da loro utilizzata. 
+
+\subsection{Pipeline Progetto}
+\begin{figure}[hbpt!]
+		\centering
+		\includesvg[inkscapelatex=false, width=\textwidth]{images/Pipeline}
+  		\caption{Pipeline del progetto}
+        \label{fig:pipeline}
+\end{figure}
+Il progetto si compone di 6 moduli (come si può vedere in Figura \ref{fig:pipeline}) a pagina \pageref{fig:pipeline}:
+\begin{description}
+    \item[Raw Data] A questo modulo vengono dati in input i dati grezzi scaricati da Firehose. I dati
+                    grezzi sono sotto forma di file di testo semplice e divisi per classe tumorale. 
+                    Il modulo si occupa di aggiungere la label di classe ai sample di una specifica classe
+                    tumorale per tutte le classi tumorali coinvolte. In output viene restituito un file csv
+                    unico comprensivo dei sample di tutte le classi tumorali sotto test.
+    \item[Preprocessing] Tale modulo prende in input il file csv (il dataset) creato dal modulo raw data e
+                         il file di annotation con cui vengono confrontati i geni. Vengono effettuati le 
+                         trasformazioni così come descritto nella sezione \ref{sec:methodology} e vengono create
+                         le immagini (l'output di questo modulo) contenenti i dati preprocessati che saranno date 
+                         in pasto alla CNN.
+    \item[Training and Testing] Questo modulo prende in input le immagini generate dal modulo di preprocessing, 
+                                ossia i dati d'input sono file \texttt{.png} divisi in una fold di training ed una 
+                                di testing per 10 volte in base alla 10-cross fold validation.
+                                Il modulo applica a queste immagini un servizio di data agumention per trasformare 
+                                le immagini in tensori che sono comprensibili dal modello; in seguito configura 
+                                gli iperparametri necessari al processo di training. 
+                                In conclusione il modulo avvia una sessione di testing con un test set valutando
+                                un'accuracy iniziale per ogni fold.
+                                Il modulo avrà multipli output: i pesi ottenuti dal processo di trainng, le etichette
+                                predette e le etichette reali.
+    \item[Performance evaluation] Tale modulo prende in input i vettori contenti le etichette predette dal modello 
+                                  e quelle reali del Test Set.
+                                  Usando le metriche di valutazione descritte nella sezione \ref{sec:result} 
+                                  valuta le performance del modello che poi vengono salvate in un'immagine \texttt{.png}
+                                  per la matrice di confusione ed in un file csv per le metriche di valutazione.
+    \item[Heatmaps generation] Questo modulo prende in input i file pytorch che contengono i pesi ottenuti dal modulo 
+                               di training.
+                               Da questi ultimi il modulo genera delle heatmap che permettono di interpretare
+                               visivamente i processi decisionali interni al modello. Tali mappe saranno prima 
+                               generate per i singoli campioni dopodiché verranno usate per generare delle
+                               heatmap legate all'intera coorte tumorale.
+                               L'output di tale modulo saranno le stesse heatmap che contengono i contribuiti di
+                               ogni gene alla classificazione.
+    \item[Biological validation] Tale modulo prende come input l'insieme delle feature (ossia i geni selezionati 
+                                 nella fase di preprocessing) e i confidence score generati a partire dalle 
+                                 confidence pixel map generate dal modulo di heatmaps generation.
+                                 L'output, invece, consiste del plot che mostra l'importanza dei geni selezionati 
+                                 e delle liste dei top 400 gene per ogni classe tumorale per ogni fold. 
+                                 Queste ultime vengono poi unite in un'unica lista per classe tumorale e tale 
+                                 lista viene sottomessa alla piattaforma DAVID per eseguire la Pathway Enrichment
+                                 Analysis. 
+\end{description}
+
+\subsection{Moduli e Modifiche Apportate al Codice Esistente}
+Quando abbiamo clonato la repository GitHub di \cite{lyu2018deep} ci siamo accorti subito che purtroppo
+alcune parti del codice erano mancanti e che la documentazione era davvero molto scarsa o del tutto assente.
+Abbiamo quindi passato in rassegna i vari moduli per capire come procedere e abbiamo convenuto che la cosa più
+ovvia da fare fosse quella di seguire il workflow.
+
+\subsubsection{Raw Data}~ \newline
+\begin{figure}[hbpt!]
+		\centering
+		\includesvg[inkscapelatex=false, width=0.7\textwidth]{images/RawData}
+  		\caption{Modulo Raw Data}
+        \label{fig:raw-data-module}
+\end{figure}
+Questo modulo non era stato previsto da \cite{lyu2018deep} ed è stato da noi inserito al fine di comprendere a più 
+basso livello come è stato creato il dataset utilizzato per i vari test. 
+La prima cosa che abbiamo constatato, esaminando i dati grezzi scaricati da FireHose, è che per alcune coorti 
+tumorali il numero di sample dichiarato non corrispondeva perché erano presenti dei sample in più. Analizzando meglio 
+le tabelle riepilogative di FireHose abbiamo capito che tali sample in più erano quelli non classificati come TP 
+(Solid Primary Tumor) e dunque andavano rimossi dal dataset finale in quanto non utili ai fini della classificazione. 
+Per effettuare questo passo di data cleaning, quindi, è stato necessario recuperare gli ID specifici dei sample da
+rimuovere.
+Inizialmente avevamo pensato di utilizzare un processo di web scraping per automatizzare il processo ma non è 
+stato possibile procedere in tal senso per via della complessità della pagina html e per via del tempo necessario 
+ad eseguire tale operazione.
+Abbiamo quindi deciso di eseguire tale operazione manualmente solo per il caso binario e ternario con lo scopo ultimo 
+di confermare le nostre ipotesi. Dopo aver eseguito tale operazione, abbiamo provveduto ad aggiungere, per ogni sample,
+le etichette necessarie all'identificazione della corretta coorte tumorale così come fatto anche in \cite{lyu2018deep}.
+Tali etichette sono numeri interi nel range $[0, n-1]$ dove $n$ è il numero di classi tumorali sotto test.
+Questo vincolo sulle etichette è presente per via della funzione \texttt{CrossEntropyLoss} del modulo di Training 
+e Testing che altrimenti solleverebbe errore.
+
+Il modulo raw data, dunque, si limita ad unire in un unico file csv i sample dei file di dati grezzi delle varie coorti
+tumorali sotto test preventivamente ripuliti ed etichettati. Nel dataset finale, quindi, compariranno solo i sample
+mRNASeq contrassegnati con TP (Solid Primary Tumor). La struttura di questo modulo può essere osservata in 
+Figura \ref{fig:raw-data-module}.
+
+\subsubsection{Preprocessing}~\newline
+\begin{figure}[hbpt!]
+		\centering
+		\includesvg[inkscapelatex=false, width=0.7\textwidth]{images/Preprocessing}
+  		\caption{Modulo di Preprocessing}
+        \label{fig:preprocessing_module}
+\end{figure}
+Nello script di preprocessing erano fornite solo alcune funzione ma perlopiù scarsamente documentate o con documentazione
+completamente assente. Inoltre non era presente una funzione \texttt{main} che consentisse di avviare l'intero processo.
+Abbiamo, quindi, dapprima studiato nel dettaglio il funzionamento di ogni funzione per comprenderne tutti i passi.
+Dopodiché è stato facile dedurre anche l'ordine di chiamata, capire quali erano i parametri attuali da passare
+alle funzioni e scrivere la funzione main (poi spezzata in diverse sotto-funzioni) che consente di eseguire tutto il
+processo.
+Per semplificarci il lavoro e per avere un maggior controllo sull'esecuzione abbiamo modificato le firme
+di alcune delle funzioni al fine poter modificare agilmente parametri che in \cite{lyu2018deep} avevano impostato 
+come costanti (ad esempio la threshold per la selezione delle feature). Una panoramica generale del modulo è presente 
+in Figura \ref{fig:preprocessing_module}.
+
+Nello specifico, le funzioni fornite da \cite{lyu2018deep} erano le seguenti:
+\begin{description}
+	\item[\texttt{feature\_selection}] che si occupa di estrarre le feature rilevanti (i geni) dal dataset.
+                                       Dapprima viene fatto un confronto con un file di annotation in modo da
+                                       rimuovere i geni non pertinenti, poi i geni vengono selezionati in base alla
+                                       soglia di varianza impostata. 
+                                       La lista restituita è una lista di \textbf{official gene symbol}.
+	\item[\texttt{sort\_feature}] che si occupa di ordinare i geni in base al numero cromosomico, in quanto è più
+                                  probabile che geni vicini interagiscano tra loro.
+	\item[\texttt{kfold\_split}] che si occupa di dividere il dataset tramite n-fold cross validation. 
+                                 In questo caso specifico la divisione è fatta solo in dataset di training e dataset 
+                                 di testing per 10 fold e non in training, testing e validation.
+	\item[\texttt{embedding\_2d}] che si occupa di fare l'embedding dei dati nelle immagini 2D. 
+                                  Durante l'esecuzione di questa funzione così come fornita da \cite{lyu2018deep} 
+                                  veniva sollevato un warning sulla conversione Lossy\footnote{Conversione con perdita
+                                  di informazioni} delle immagini. 
+                                  Abbiamo provveduto a rimuovere tale warning tramite la funzione 
+                                  \texttt{img\_as\_ubyte} di \texttt{skimage} 
+                                  che consente di mappare i valori dei pixel direttamente nel range $[0, 255]$.
+	\item[\texttt{over\_sampling}] per ovviare allo sbilanciamento tra classi tramite SVMSMOTE. 
+                                   Una nota a parte merita questa funzione in quanto è stata aggiornata per poter
+                                   utilizzare la nuova versione della libreria \texttt{imbalanced-learn}. 
+                                   In particolare abbiamo impostato i seguenti parametri:
+                                   \begin{description}
+                                       \item[sampling\_strategy='minority'] al fine effettuare il resampling 
+                                       solo delle classi minoritarie
+                                       \item[random\_state=$42$] per controllare la randomizzazione dell'algoritmo. 
+                                                                 $42$ è usato come seme del generatore.
+                                       \item[k\_neighbors=$5$] I nearest neighbor utilizzati per definire il vicinato di
+                                                               campioni da utilizzare per generare i campioni sintetici. 
+                                       \item[n\_job=$32$] il numero di core della CPU utilizzati durante il ciclo di
+                                                          cross-validation.
+                                   \end{description}
+\end{description}  
+
+Per rendere più agevoli e chiari i passi eseguiti e l'ordine di chiamata delle varie funzioni, sono state da 
+noi aggiunte le seguenti funzioni:
+\begin{itemize}
+    \item \textbf{\texttt{run\_preprocessing}}: che si occupa di avviare effettivamente il preprocessing 
+           chiamando le funzioni descritte precedentemente nell'ordine corretto impostando in maniera appropriata 
+           i parametri attuali.
+    \item \textbf{\texttt{binary\_test\_preprocessing}}: che si occupa semplicemente di impostare le path corrette 
+           per eseguire il test sul caso binario, creare la folder per gli output e passare la threshold corretta 
+           per la selezione dei geni.
+    \item \textbf{\texttt{ternary\_test\_preprocessing}}: come la funzione precedente ma per il caso ternario.
+    \item \textbf{\texttt{general\_test\_preprocessing}}: come la funzione precedente ma per il caso generale.
+    \item \textbf{\texttt{main}}: per avviare l'intero modulo.
+\end{itemize}
+
+\subsubsection{Training e Testing} ~\newline
+\begin{figure}[hbpt!]
+		\centering
+		\includesvg[inkscapelatex=false, width=0.7\textwidth]{images/CNNModule}
+  		\caption{Modulo di Training e Testing}
+        \label{fig:CNN_module}
+\end{figure}
+Nello script di training e testing non erano fornite funzioni e c'erano le seguenti definizioni di classe:
+\begin{itemize}
+	\item \texttt{TumorDatasetTrain}
+	\item \texttt{TumorDatasetTest}
+	\item \texttt{ToTensor}
+	\item \texttt{Net}
+\end{itemize}
+I nostri primi sforzi si sono dunque concentrati nel comprendere il funzionamento di tali classi
+e capire dove venissero utilizzate.
+Le classi \texttt{TumorDatasetTrain} e \texttt{TumorDatasetTest} modellano i dataset di traning e di testing 
+e si occupano della lettura delle immagini generate nella fase di preprocessing e della loro trasformazione in
+tensori, la classe \texttt{ToTensor} si occupa di trasformare i campioni estratti in tensori da mandare al modello
+mentre la classe \texttt{Net} modella la rete neurale convoluzionale utilizzata. 
+Siccome tali classi saranno utilizzate anche nella fase successiva, abbiamo deciso di metterle in un file
+diverso, chiamato \texttt{classes.py} in modo da richiamarle agilmente e al fine di eliminare la ridondanza e gli 
+errori che ne potevano derivare in seguito alle nostre modifiche. 
+Originariamente le classi \texttt{TumorDatasetTrain} e \texttt{TumorDatasetTest} facevano riferimento
+ad un esecuzione su un cluster di nodi, quindi abbiamo deciso di rinominarle in \texttt{LocalTumorDatasetTrain} 
+e \texttt{LocalTumorDatasetTest} in modo da rendere più evidente che il nostro test è stato eseguito su un'unica
+macchina e non in un cluster.
+
+I problemi che abbiamo constatato sono stati i seguenti:
+\begin{itemize}
+	\item l'API \texttt{Variable} utilizzata da \cite{lyu2018deep} era deprecata e dunque il codice è stato modificato 
+		   per aggiornarlo alla versione corrente di \texttt{pytorch};
+	\item è stato necessario introdurre la One-Hot encoding nella fase di training con la rete Net 
+          (seppur gli autori non avevano previsto tale passo) in quanto la funzione di loss sollevava un'eccezione. 
+          Con VarNet, invece, non è necessario utilizzarla in quanto la funzione di loss è stata modificata;
+	\item abbiamo dovuto modificare il codice in quanto non è stato possibile utilizzare \texttt{pytorch} 
+          in combinazione con CUDA così com'era.
+		   È stato necessario ridurre drasticamente la batch size (da $500$ previsto dagli autori a $90$) in quanto 
+          la memoria GPU disponibile non era sufficiente.
+\end{itemize}
+Si può osservare la struttura di questo modulo in Figura \ref{fig:CNN_module}.
+
+\subsubsection{Performance evaluation} ~ \newline
+\begin{figure}[hbpt!]
+		\centering
+		\includesvg[inkscapelatex=false, width=0.3\textwidth]{images/ModelEvaluation}
+  		\caption{Modulo di Valutazione delle Performance}
+        \label{fig:Model_Evaluation}
+\end{figure}
+Nello script di valutazione delle performance gli autori si limitavano ad eseguire il plotting della matrice 
+di confusione e a calcolare le metriche complessive (Accuracy, Precision, Recall e F1-score).
+
+Tale script è stato noi integrato prevedendo la possibilità di: 
+\begin{itemize}
+    \item salvare l'accuracy per ogni coorte tumorale
+    \item salvare le righe della matrice di confusione al fine di avere un quadro più chiaro in fase di analisi
+    \item salvare tutti i risultati in un file formato \texttt{csv}
+    \item salvare l'immagine della matrice di confusione.
+\end{itemize}
+
+La struttura di questo modulo è presente in Figura \ref{fig:Model_Evaluation}.
+
+\subsubsection{Heatmaps generation}~ \newline
+\begin{figure}[hbpt!]
+		\centering
+		\includesvg[inkscapelatex=false, width=0.5\textwidth]{images/HeatmapsGeneration}
+  		\caption{Modulo di Generazione delle Heatmap}
+        \label{fig:Heatmaps_Generation}
+\end{figure}
+Il modulo per la generazione delle heatmap, mostrato in Figura \ref{fig:Heatmaps_Generation}, era stato inserito 
+nella repository GitHub di \cite{lyu2018deep} ed è stato analizzato nel nostro lavoro per poter comprendere la 
+tecnica di visualizzazione Guided Grad-CAM 
+(cfr. \ref{sec:methodology}).
+Lo script di riferimento era \textit{Guided\_GradCam.py} (era presente anche una versione che include l'uso di CUDA 
+per il supporto con GPU). 
+Abbiamo quindi concentrato i nostri primi sforzi sull'analizzare e comprendere le classi elencate di seguito e 
+i metodi messi a disposizione:
+\begin{itemize}
+    \item \texttt{Net} 
+    \item \texttt{PropagationBase}
+    \item \texttt{GradCAM}
+    \item \texttt{BackPropagation}
+    \item \texttt{GuidedBackPropagation}
+\end{itemize}
+In seguito applicando il workflow descritto nella metodologia applicata, abbiamo compreso l'interazione, le chiamate 
+e la gerarchia che potevano sussistere tra tali classi. Così come indicato nella precedente lista, 
+la classe \textbf{\texttt{Net}}, modella la nostra rete neurale CNN, che in questo caso sarà utilizzata dopo
+l'addestramento cosi da poter registrare le mappe di attivazione ed i gradienti che costituiscono i componenti
+principali per generare Guided Grad-CAM. 
+
+La classe \textbf{\texttt{PropagationBase}}, modella le operazioni di base per cui sarà usata la classe precedente 
+cioè la forward pass per le feature map è la backward pass per i gradienti. Queste operazioni saranno applicate a 
+tutti i layer della rete. Oltre ciò definisce anche un metodo che modella la base per una hook function\footnote{Pytorch
+usa le hook function per eseguire una funzione durante l'operazione di backward oppure durante il processo di 
+forward pass}. Per concludere tale classe sarà il padre di tutte le altre visto che implementa funzioni vitali allo 
+svolgimento del processo di generazione delle heatmaps. 
+La prima classe specializzata da \texttt{PropagationBase} è \textbf{\texttt{Grad-CAM}},
+questa classe rappresenta la prima vera componente per costruire Guided Grad-CAM cioè la Gradient Classifaction
+Activation Map, modellando tutte le operazione necessarie alla sua generazione. Eseguirà dapprima la combinazione
+lineare delle activation map ed la media ponderata dei gradienti normalizzati, poi questo risultato sarà dato in 
+pasto alla ReLU per ottenere la nostra heatmap. 
+Infine, per ottenere i componenti della combinazione lineare, la classe \textbf{\texttt{Grad-CAM}} definirà la 
+hook function del padre per registrare le feature map di ogni layer durante il processo di forward pass ed i 
+gradienti durante il processo di backward. 
+
+La classe \textbf{\texttt{BackPropagation}}, esprime le operazioni necessarie allo svolgimento dell'operazione 
+di backpropagation con cui si stima l'errore di ogni layer della rete ad ogni epoca della fase di training 
+ereditata dal padre, le componenti per interagire con gli strati della rete, oltre che la possibilità di definire 
+una hook function apposita. 
+
+In conclusione la classe \textbf{\texttt{GuidedBackPropagation}}, specializzerà la classe \texttt{BackPropagation},
+introducendo quindi tutti i vincoli necessari per guidare la backpropagation tramite l'input ed il gradiente per cui 
+la classe definirà la hook function ereditata da \texttt{BackPropagation}. Quest'ultima si accerterà che tutti i 
+moduli della CNN siano istanze di ReLU, e in caso affermativo tutti gradienti negativi registrati dal modulo stesso
+vengono rimossi. Da questo lavoro di analisi dello script cosi com'era sono risaltati alcuni problemi:
+\begin{enumerate}
+    \item Si è notato una ridondanza nell'uso della classe \textbf{\texttt{Net}} 
+          (usata si qui che nel modulo di training \& testing) \label{appendix2.5:1}.
+    \item La mancanza di una funzione \texttt{main}, o di uno script  principale dove poter evocare le classi ed 
+          i metodi espressi\label{appendix2.5:2}.
+    \item Il problema di conversione lossy riscontrata nel modulo di Preprocessing, ha reso necessario una gestione
+          delle immagini a contributo nullo, vale a dire con gradiente nullo \label{appendix2.5:3}.
+    \item Viene sollevato un warning sull'uso errato della notazione array per accedere all'attributo data della 
+          classe Tensor\label{appendix2.5:4}.
+    \item Un altro problema è legato all'uso scorretto della \textit{register\_backward} per quando si hanno 
+          multipli nodi foglia della rete computazionale che conservano il gradiente dell'istanza calcolata con 
+          la backward.\label{appendix2.5:5}.
+    \item L'API \textit{Variable} usata \cite{lyu2018deep} per calcolare il gradiente nel rispetto del tensore d'input,
+          risulta essere deprecata.\label{appendix2.5:6}.
+    \item Non risulta presente nello script una funzione o una classe che permetta l'operazione di generare una 
+          heatmaps generale che rappresenti la visione completa che ha avuto il modello sull'intera coorte
+          tumorale\label{appendix2.5:7}.
+\end{enumerate}
+
+Data la mole di problemi riscontrati abbiamo deciso di eseguire un operazione di refactoring, generando lo script
+\textit{genes\_heatmaps.py}. Questo script è strutturato per esprimere i servizi offerti dal modulo e nel frattempo
+risolve i problemi precedentemente esposti tramite le seguenti funzioni:
+\begin{itemize}
+    \item \texttt{init\_dataset\_heatmaps}: Questa funzione inizializza il dataset di train che deve essere passato 
+    alla rete addestrata.
+    \item \texttt{init\_component\_heatmaps}: Il metodo assolve al compito di instanziare gli oggetti che modellano i
+    componenti fondamentali per la generazione di tutte le heatmaps. Qui viene risolto il problema \ref{appendix2.5:1},
+    spostando la classe \texttt{Net} nel modulo di supporto \ref{appendix_2.7}. In seguito vengono richiamato ed
+    inizializzate passandogli il modello addestrato anche le classi \textsc{Grad-Cam} e \textsc{GuidedBackPropagation}.
+    \item \texttt{generate\_heatmaps}: La funzione si occupa di generare i tensori che rappresentano le regioni di 
+    Grad-CAM e i gradienti generati dal processo di GuidedBackPropagation, infine richiama le operazione di salvataggio
+    per entrambe le heatmaps. Il suddetto modulo risolve il problema \ref{appendix2.5:4}, sostituendo la relativa
+    notazione con \textit{.data} aggiornato alla versione corrente di Pytorch. Mentre il problema \ref{appendix2.5:6} è
+    risolto modificando il codice per aggiornarlo alla versione corrente di Pytorch, sono stati rimossi tutti i
+    riferimenti sostituendoli con l'attributo della classe Tensor \texttt{.requires\_grad}. Oltre ciò viene risolto
+    anche il problema \ref{appendix2.5:5}, sostituendo la funzione presente con la funzione 
+    \textit{register\_full\_backward}, che a differenza della precedente versione richiama il corpo della 
+    hook function se è solo se vengono computati i tensori d'output prodotti da un layer della rete.
+    \item \texttt{save\_GradCam}: Questo servizio offre la possibilità di salvare la heatmap gradCam per una sua
+    visualizzazione in un file \texttt{.png} dopo essere stato scalato nel range [0, 255].
+    \item \texttt{save\_Guided\_Gcam}: Questo servizio offre la possibilità di salvare la heatmap GuiededGrad-CAM: 
+    qui avviene la moltiplicazione tra le regioni di Grad-CAM ed i gradienti di GuidedBackProgation, dopo ciò i valori
+    sono normalizzati prima di essere salvati in un file \texttt{.png}.
+    \item \texttt{filter\_null\_img\_Guided\_GradCam}: L'obiettivo di questa funzione è la risoluzione del problema
+    \ref{appendix2.5:3}, tale funzione si accerta prima che l'immagine in esame abbiamo contributo nullo dopodiché
+    elimina quest'ultima. Si applica tale filtro solo per le heatmap di GuidedGrad-CAM.
+    \item \texttt{filter\_null\_img\_GradCam}: Come la precedente con l'unica differenza che si applica tale filtro 
+           solo per le heatmap di Grad-CAM.
+    \item \texttt{gen\_avg\_norm\_GradCam}: L'obiettivo del servizio è la risoluzione del problema \ref{appendix2.5:7}:
+    esso estrae tutte le heatmap generate dai vari campioni classificati, dopodiché converte il tensore dell'immagine e
+    lo aggiunge ad un unico numpy array in seguito viene eseguita una media su tale array e viene normalizzato nel range
+    $[0, 255]$ prima di essere salvato. 
+    \item \texttt{gen\_avg\_norm\_GuidedGCam}: Come la precedente con l'unica differenza che l'array che rappresenta il
+    tensore dell'immagine viene convertito a \textit{uint8} per facilitare le operazioni matematiche dato che il canale
+    dei colori viene estratto sulla scala del grigio.
+    \item \texttt{main}: Risolve il problema \ref{appendix2.5:2}, permettendo di invocare tutte le funzioni
+    precedentemente descritte eseguendo quindi il caso generale basto sulla 10-SCV.    
+\end{itemize}
+
+\subsubsection{Biological evaluation} ~ \newline
+\begin{figure}[hbpt!]
+		\centering
+		\includesvg[inkscapelatex=false, width=0.8\textwidth]{images/BiologicalValidation}
+  		\caption{Modulo di Validazione Biologica}
+        \label{fig:biological_validation}
+\end{figure}
+Per il processo di validazione è stato creato uno script ex-novo in quanto in \cite{lyu2018deep} non era previsto.
+Tale script si occupa della generazione del plot che mostra i cambi di intensità nelle heatmap per ogni classe
+e della generazione delle liste di geni da sottomettere al tool DAVID\footnote{\url{https://david.ncifcrf.gov/home.jsp}}
+per procedere alla validazione dei risultati ottenuti tramite Pathway Enrichment Analysis.
+Il tool DAVID mette a disposizione delle API e dei Web Services (entrambi non aggiornati) ed era nostra intenzione
+utilizzarli per automatizzare il processo di validazione. Purtroppo non ci è stato possibile in quanto sia le API, 
+sia i Web Services non consentono di utilizzare liste di \textbf{official gene symbol}. La validazione è stata 
+dunque eseguita manualmente.
+L'unico limite che abbiamo dovuto rispettare è stato quello di avere una lista di geni con al massimo
+$3000$ valori. 
+La lista da sottomettere è stata generata nel modo seguente: sono stati dapprima estratti i top 400 gene 
+da ogni folder e poi, tramite la struttura dati \texttt{set} di python è stata creata un'unica lista, 
+senza ripetizioni, dei geni significativi di ogni coorte tumorale. 
+È possibile osservare la struttura di questo modulo nella Figura \ref{fig:biological_validation}.
+
+\subsubsection{Moduli di Supporto}~\newline 
+\label{appendix_2.7}
+Sono stati da noi creati due moduli di supporto per quelle funzioni e quelle classi richiamate in diverse 
+parti del codice.
+In \cite{lyu2018deep} avevano optato per la ridefinizione delle classi all'interno dei vari script in cui 
+venivano utilizzate. 
+Noi, invece, al fine di ridurre al minimo gli errori che potevano scaturire a seguito delle nostre modifiche 
+e per ridurre la ridondanza, abbiamo deciso di definirle in due script esterni. Tali script sono:
+\begin{itemize}
+    \item \texttt{support.py}: in cui vengono definite le funzioni di utilità per la cancellazioni delle immagini 
+          a contributo nullo e la funzione che ci consente di ottenere il confidence score necessario all'estrazione 
+          dei top gene.
+    \item \texttt{classes.py}: in cui vengono definite le varie classi utilizzate sia dallo script di training e 
+          testing sia dallo script di generazione delle heatmap.
+\end{itemize}
+
+\subsection{Setup dell'esperimento}
+I test sono stati svolti su un server HP con le caratteristiche riportate in Tabella \ref{tab:hardware-specs}
+a pagina \pageref{tab:hardware-specs} e i passi svolti sono stati i seguenti:
+\begin{enumerate}
+    \item creazione di un virtual environment tramite conda (con python 3.9)
+    \item installazione delle librerie necessarie al funzionamento del codice 
+          (tra parentesi tonde la versione da noi utilizzata):
+    \begin{itemize}
+        \item numpy (1.23.5)
+        \item pandas (1.5.2)
+        \item pytorch (1.13.1) con CUDA (ver. 11.6)
+        \item matplotlib (3.5.3)
+        \item scikit-learn (1.2.1)
+        \item scikit-image (0.19.3)
+        \item imbalanced-learn (0.10.1)
+        \item opencv (4.7.0)
+    \end{itemize}
+\end{enumerate}
+Come IDE abbiamo utilizzato PyCharm Community edition e i risultati sono stati gestiti come riportato in Figura
+\ref{fig:filesystem} a pagina \pageref{fig:filesystem}.
+
+\begin{table}[htbp!]
+    \centering
+        \caption{Specifiche Hardware \& Software della Macchina Utilizzata}
+    \begin{tabular}{r|l}
+        \toprule
+         Sistema Operativo & Ubuntu 21.10 (64-bit) \\
+         Processore        & Intel(R) Xeon(R) Gold 5218 CPU @ 2.30Ghz (x32) \\
+         RAM               & 270 GB \\
+         Scheda Grafica    & NVIDIA Quadro RTX 4000 (8 GiB di memoria dedicata) [CUDA ver. 11.6] \\
+         \bottomrule
+    \end{tabular}
+    \label{tab:hardware-specs}
+\end{table}
+
+\begin{figure}[hbpt!]
+		\centering
+		\includesvg[inkscapelatex=false, width=\textwidth]{images/Filesystem}
+  		\caption{Fold di output.}
+        \label{fig:filesystem}
+\end{figure}
